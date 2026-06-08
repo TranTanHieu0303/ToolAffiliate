@@ -1,0 +1,44 @@
+Navigating directly to Product Offer page...
+[API Request] GET | https://lang.alicdn.com/mcms/adsense/0.0.33/adsense.json
+[API Request] GET | https://lang.alicdn.com/mcms/affiliate-on-boarding/0.0.9/affiliate-on-boarding.json?t=1000
+[API Response] 200 | https://lang.alicdn.com/mcms/affiliate-on-boarding/0.0.9/affiliate-on-boarding.json?t=1000
+[API Response] 200 | https://lang.alicdn.com/mcms/adsense/0.0.33/adsense.json
+[API Request] GET | https://adsense.lazada.vn/account/queryuserinfo.json
+[API Request] GET | https://adsense.lazada.vn/account/get_lazada_user_info.json
+[API Request] GET | https://adsense.lazada.vn/account/check-register.json
+[API Request] GET | https://adsense.lazada.vn/subId-templates/list.json
+[API Request] GET | https://adsense.lazada.vn/account/check_media_user.json
+[API Request] GET | https://adsense.lazada.vn/market-info/detail.json
+[API Response] 200 | https://adsense.lazada.vn/account/get_lazada_user_info.json
+[API Request] GET | https://adsense.lazada.vn/substitutionLogin/substitutionListResponse.json
+[API Response] 200 | https://adsense.lazada.vn/subId-templates/list.json
+[API Response] 200 | https://adsense.lazada.vn/account/check_media_user.json
+[API Request] GET | https://adsense.lazada.vn/account/profile.json
+[API Request] GET | https://adsense.lazada.vn/account/check-register.json
+[API Response] 200 | https://adsense.lazada.vn/market-info/detail.json
+[API Response] 200 | https://adsense.lazada.vn/account/queryuserinfo.json
+[API Response] 200 | https://adsense.lazada.vn/account/check-register.json
+[API Response] 200 | https://adsense.lazada.vn/account/check-register.json
+[API Request] GET | https://adsense.lazada.vn/account/register-info.json
+[API Response] 200 | https://adsense.lazada.vn/account/profile.json
+[API Response] 200 | https://adsense.lazada.vn/substitutionLogin/substitutionListResponse.json
+[API Response] 200 | https://adsense.lazada.vn/account/register-info.json
+[API Request] POST | https://arms-retcode-sg.aliyuncs.com/r.png?t=api&times=1&page=vn!%2Foffer%2Fproduct_offer&tag=&release=&environment=prod&begin=1780939300817&api=%2Faccount%2Fregister-info.json&success=1&time=137&code=1&msg=&traceId=21010c9417809393008438843e3ab8&pv_id=kwmqyqkj5X0hFp9qhy7hzF1eU6aj&domain=adsense.lazada.vn&flag=1&traceOrigin=response&sr=800x600&vp=1280x1024&ct=4g&uid=3smb2q9R5pwhvC9t0z5Ldgw1OXhg&sid=2qm5pqFw5bdh0t96szgRdFF6d6mn&pid=hyey0hz67v%403fe0440df31ebe3&_v=1.8.30&sampling=1&dl=https%3A%2F%2Fadsense.lazada.vn%2Findex.htm%23!%2Foffer%2Fproduct_offer&z=mq5h9yzc&post_res=
+  Payload: {}
+[API Request] POST | https://adsense.lazada.vn/category/getRootCategory.json
+  Payload: {"bizCode":6}
+[API Request] GET | https://adsense.lazada.vn/newOffer/searchSkuOffer.json?pageNo=1&pageSize=24&keywordType=0&sortField=sales_volume&sortOrder=desc
+[API Request] GET | https://adsense.lazada.vn/bill/isPhecda.json
+[API Response] 200 | https://arms-retcode-sg.aliyuncs.com/r.png?t=api&times=1&page=vn!%2Foffer%2Fproduct_offer&tag=&release=&environment=prod&begin=1780939300817&api=%2Faccount%2Fregister-info.json&success=1&time=137&code=1&msg=&traceId=21010c9417809393008438843e3ab8&pv_id=kwmqyqkj5X0hFp9qhy7hzF1eU6aj&domain=adsense.lazada.vn&flag=1&traceOrigin=response&sr=800x600&vp=1280x1024&ct=4g&uid=3smb2q9R5pwhvC9t0z5Ldgw1OXhg&sid=2qm5pqFw5bdh0t96szgRdFF6d6mn&pid=hyey0hz67v%403fe0440df31ebe3&_v=1.8.30&sampling=1&dl=https%3A%2F%2Fadsense.lazada.vn%2Findex.htm%23!%2Foffer%2Fproduct_offer&z=mq5h9yzc&post_res=
+[API Response] 200 | https://adsense.lazada.vn/category/getRootCategory.json
+[API Response] 200 | https://adsense.lazada.vn/bill/isPhecda.json
+[API Request] POST | https://arms-retcode-sg.aliyuncs.com/r.png?t=api&times=1&page=vn!%2Foffer%2Fproduct_offer&tag=&release=&environment=prod&begin=1780939301255&api=%2Fbill%2FisPhecda.json&success=1&time=161&code=1&msg=QUERY_PHECDA_SWITCH_SUCCESS&traceId=21010c9417809393012928847e3ab8&pv_id=kwmqyqkj5X0hFp9qhy7hzF1eU6aj&domain=adsense.lazada.vn&flag=1&traceOrigin=response&sr=800x600&vp=1280x1024&ct=4g&uid=3smb2q9R5pwhvC9t0z5Ldgw1OXhg&sid=2qm5pqFw5bdh0t96szgRdFF6d6mn&pid=hyey0hz67v%403fe0440df31ebe3&_v=1.8.30&sampling=1&dl=https%3A%2F%2Fadsense.lazada.vn%2Findex.htm%23!%2Foffer%2Fproduct_offer&z=mq5h9yzd&post_res=
+  Payload: {}
+[API Response] 200 | https://arms-retcode-sg.aliyuncs.com/r.png?t=api&times=1&page=vn!%2Foffer%2Fproduct_offer&tag=&release=&environment=prod&begin=1780939301255&api=%2Fbill%2FisPhecda.json&success=1&time=161&code=1&msg=QUERY_PHECDA_SWITCH_SUCCESS&traceId=21010c9417809393012928847e3ab8&pv_id=kwmqyqkj5X0hFp9qhy7hzF1eU6aj&domain=adsense.lazada.vn&flag=1&traceOrigin=response&sr=800x600&vp=1280x1024&ct=4g&uid=3smb2q9R5pwhvC9t0z5Ldgw1OXhg&sid=2qm5pqFw5bdh0t96szgRdFF6d6mn&pid=hyey0hz67v%403fe0440df31ebe3&_v=1.8.30&sampling=1&dl=https%3A%2F%2Fadsense.lazada.vn%2Findex.htm%23!%2Foffer%2Fproduct_offer&z=mq5h9yzd&post_res=
+[API Request] POST | https://arms-retcode-sg.aliyuncs.com/r.png?t=api&times=1&page=vn!%2Foffer%2Fproduct_offer&tag=&release=&environment=prod&begin=1780939301174&api=%2Fcategory%2FgetRootCategory.json&success=1&time=406&code=1&msg=&traceId=21010c9417809393012348845e3ab8&pv_id=kwmqyqkj5X0hFp9qhy7hzF1eU6aj&domain=adsense.lazada.vn&flag=1&traceOrigin=response&sr=800x600&vp=1280x1024&ct=4g&uid=3smb2q9R5pwhvC9t0z5Ldgw1OXhg&sid=2qm5pqFw5bdh0t96szgRdFF6d6mn&pid=hyey0hz67v%403fe0440df31ebe3&_v=1.8.30&sampling=1&dl=https%3A%2F%2Fadsense.lazada.vn%2Findex.htm%23!%2Foffer%2Fproduct_offer&z=mq5h9yze&post_res=
+  Payload: {}
+[API Response] 200 | https://arms-retcode-sg.aliyuncs.com/r.png?t=api&times=1&page=vn!%2Foffer%2Fproduct_offer&tag=&release=&environment=prod&begin=1780939301174&api=%2Fcategory%2FgetRootCategory.json&success=1&time=406&code=1&msg=&traceId=21010c9417809393012348845e3ab8&pv_id=kwmqyqkj5X0hFp9qhy7hzF1eU6aj&domain=adsense.lazada.vn&flag=1&traceOrigin=response&sr=800x600&vp=1280x1024&ct=4g&uid=3smb2q9R5pwhvC9t0z5Ldgw1OXhg&sid=2qm5pqFw5bdh0t96szgRdFF6d6mn&pid=hyey0hz67v%403fe0440df31ebe3&_v=1.8.30&sampling=1&dl=https%3A%2F%2Fadsense.lazada.vn%2Findex.htm%23!%2Foffer%2Fproduct_offer&z=mq5h9yze&post_res=
+[API Response] 200 | https://adsense.lazada.vn/newOffer/searchSkuOffer.json?pageNo=1&pageSize=24&keywordType=0&sortField=sales_volume&sortOrder=desc
+[API Request] POST | https://arms-retcode-sg.aliyuncs.com/r.png?t=api&times=1&page=vn!%2Foffer%2Fproduct_offer&tag=&release=&environment=prod&begin=1780939301229&api=%2FnewOffer%2FsearchSkuOffer.json&success=1&time=428&code=1&msg=&traceId=21010c9417809393012578846e3ab8&pv_id=kwmqyqkj5X0hFp9qhy7hzF1eU6aj&domain=adsense.lazada.vn&flag=1&traceOrigin=response&sr=800x600&vp=1280x1024&ct=4g&uid=3smb2q9R5pwhvC9t0z5Ldgw1OXhg&sid=2qm5pqFw5bdh0t96szgRdFF6d6mn&pid=hyey0hz67v%403fe0440df31ebe3&_v=1.8.30&sampling=1&dl=https%3A%2F%2Fadsense.lazada.vn%2Findex.htm%23!%2Foffer%2Fproduct_offer&z=mq5h9yzf&post_res=
+  Payload: {}
+[API Response] 200 | https://arms-retcode-sg.aliyuncs.com/r.png?t=api&times=1&page=vn!%2Foffer%2Fproduct_offer&tag=&release=&environment=prod&begin=1780939301229&api=%2FnewOffer%2FsearchSkuOffer.json&success=1&time=428&code=1&msg=&traceId=21010c9417809393012578846e3ab8&pv_id=kwmqyqkj5X0hFp9qhy7hzF1eU6aj&domain=adsense.lazada.vn&flag=1&traceOrigin=response&sr=800x600&vp=1280x1024&ct=4g&uid=3smb2q9R5pwhvC9t0z5Ldgw1OXhg&sid=2qm5pqFw5bdh0t96szgRdFF6d6mn&pid=hyey0hz67v%403fe0440df31ebe3&_v=1.8.30&sampling=1&dl=https%3A%2F%2Fadsense.lazada.vn%2Findex.htm%23!%2Foffer%2Fproduct_offer&z=mq5h9yzf&post_res=
