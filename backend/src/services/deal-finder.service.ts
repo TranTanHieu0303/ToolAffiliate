@@ -3,7 +3,7 @@ import { prisma } from './prisma.service';
 import { AIService } from './ai.service';
 import { TelegramService } from './telegram.service';
 import { ConfigService } from './config.service';
-import puppeteer from 'puppeteer';
+// puppeteer is imported dynamically to support ES Module in CommonJS
 
 export class DealFinderService {
   static async searchAndPostDeals() {
@@ -580,6 +580,8 @@ export class DealFinderService {
     console.log(`[Adsense Link] Launching browser to convert: ${productUrl}`);
     let browser;
     try {
+      const puppeteerModule = await import('puppeteer');
+      const puppeteer = puppeteerModule.default || puppeteerModule;
       browser = await puppeteer.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-blink-features=AutomationControlled'],
@@ -751,6 +753,8 @@ export class DealFinderService {
     console.log(`[Browser Scrape] Launching browser for ${platform} product details...`);
     let browser;
     try {
+      const puppeteerModule = await import('puppeteer');
+      const puppeteer = puppeteerModule.default || puppeteerModule;
       browser = await puppeteer.launch({
         headless: true,
         args: [
