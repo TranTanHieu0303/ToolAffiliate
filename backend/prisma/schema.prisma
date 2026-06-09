@@ -22,6 +22,12 @@ model SystemConfig {
   shopeeCookie          String?  @db.Text
   lazadaCookie          String?  @db.Text
   promptTemplate        String?  @db.Text
+  isAutoSendTelegram    Boolean  @default(true)
+  shopeeAffiliateId     String?
+  lazadaAffiliateId     String?
+  accessTradeId         String?
+  lazadaSearchMethod    String   @default("catalog")
+  adsenseLinkConvert    Boolean  @default(false)
   updatedAt             DateTime @updatedAt
 }
 
@@ -46,10 +52,17 @@ model Deal {
   voucherCode    String?
   originalUrl    String   @db.Text
   affiliateUrl   String?  @db.Text
+  rawInfo        String?  @db.Text
   aiCaption      String?  @db.Text
   status         String   @default("PENDING") // "PENDING" | "SENT" | "FAILED"
+  canUseCoins    Boolean  @default(false)
+  maxCoinsRedeem Int      @default(0)
+  shopVoucher    Float    @default(0)
+  platformVoucher Float   @default(0)
+  priceAfterCoins Float?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  sentAt         DateTime?
 
   @@unique([platform, productId])
 }
@@ -58,6 +71,7 @@ model Order {
   id             String   @id @default(uuid())
   platform       String   // "SHOPEE" | "LAZADA"
   orderId        String   @unique
+  productName    String
   orderValue     Float
   commission     Float
   status         String   @default("PENDING") // "PENDING" | "COMPLETED" | "CANCELLED"

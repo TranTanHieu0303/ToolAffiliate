@@ -63,7 +63,7 @@ export class DealFinderService {
             title: dealPayload.title,
             originalPrice: dealPayload.originalPrice,
             discountPrice: dealPayload.discountPrice,
-            discountPercent: dealPayload.discountPercent,
+            discountMargin: dealPayload.discountMargin,
             platform: dealPayload.platform,
             link: dealPayload.affiliateUrl,
             canUseCoins: dealPayload.canUseCoins,
@@ -82,7 +82,7 @@ export class DealFinderService {
               imageUrl: dealPayload.imageUrl,
               originalPrice: dealPayload.originalPrice,
               discountPrice: dealPayload.discountPrice,
-              discountPercent: dealPayload.discountPercent,
+              discountMargin: dealPayload.discountMargin,
               originalUrl: dealPayload.originalUrl,
               affiliateUrl: dealPayload.affiliateUrl,
               aiCaption: aiCaption,
@@ -152,7 +152,7 @@ export class DealFinderService {
 
         const originalPrice = (item.price_before_discount || item.price) / 100000;
         const discountPrice = item.price / 100000;
-        const discountPercent = item.raw_discount || Math.round(((originalPrice - discountPrice) / (originalPrice || 1)) * 100) || 0;
+        const discountMargin = item.raw_discount || Math.round(((originalPrice - discountPrice) / (originalPrice || 1)) * 100) || 0;
 
         const title = item.name;
         const imageUrl = item.image
@@ -186,7 +186,7 @@ export class DealFinderService {
           imageUrl,
           originalPrice,
           discountPrice,
-          discountPercent,
+          discountMargin,
           originalUrl,
           canUseCoins,
           maxCoinsRedeem,
@@ -243,7 +243,7 @@ export class DealFinderService {
 
           const originalPrice = parseFloat(item.originalPrice) || parseFloat(item.price) || 0;
           const discountPrice = parseFloat(item.price) || 0;
-          const discountPercent = item.discount
+          const discountMargin = item.discount
             ? parseInt(item.discount.replace(/[^0-9]/g, ''))
             : Math.round(((originalPrice - discountPrice) / (originalPrice || 1)) * 100) || 0;
 
@@ -289,7 +289,7 @@ export class DealFinderService {
             imageUrl,
             originalPrice,
             discountPrice,
-            discountPercent,
+            discountMargin,
             originalUrl,
             canUseCoins,
             maxCoinsRedeem,
@@ -347,7 +347,7 @@ export class DealFinderService {
           } else if (deal.discountPrice) {
             deal.originalPrice = deal.discountPrice;
           }
-          deal.discountPercent = Math.round(((deal.originalPrice - deal.discountPrice) / (deal.originalPrice || 1)) * 100) || 0;
+          deal.discountMargin = Math.round(((deal.originalPrice - deal.discountPrice) / (deal.originalPrice || 1)) * 100) || 0;
 
           if (details.shopVoucher !== undefined) deal.shopVoucher = details.shopVoucher;
           if (details.platformVoucher !== undefined) deal.platformVoucher = details.platformVoucher;
@@ -392,8 +392,8 @@ export class DealFinderService {
       const platform = platforms[Math.floor(Math.random() * platforms.length)];
       const productId = Math.floor(Math.random() * 9000000000 + 1000000000).toString();
       const originalPrice = Math.floor(Math.random() * 500 + 100) * 1000; // 100k - 600k
-      const discountPercent = Math.floor(Math.random() * 40 + 15); // 15% - 55%
-      const discountPrice = Math.round((originalPrice * (100 - discountPercent)) / 100);
+      const discountMargin = Math.floor(Math.random() * 40 + 15); // 15% - 55%
+      const discountPrice = Math.round((originalPrice * (100 - discountMargin)) / 100);
 
       const shopVoucher = Math.round(Math.min(discountPrice * 0.05, 50000));
       const platformVoucher = Math.round(Math.min(discountPrice * 0.10, 100000));
@@ -410,7 +410,7 @@ export class DealFinderService {
         imageUrl: `https://picsum.photos/seed/${productId}/600/400`,
         originalPrice,
         discountPrice,
-        discountPercent,
+        discountMargin,
         originalUrl: platform === 'SHOPEE'
           ? `https://shopee.vn/a-i.12345.${productId}`
           : `https://www.lazada.vn/products/mock-item-${productId}.html`,
@@ -512,7 +512,7 @@ export class DealFinderService {
       // afterVoucherPrice = actual price user pays after platform+shop vouchers applied
       const discountPrice = parseFloat(item.afterVoucherPrice || item.discountPrice) || 0;
       const originalPrice = parseFloat(item.originalPrice || item.discountPrice) || discountPrice;
-      const discountPercent = item.formatDiscountPercent
+      const discountMargin = item.formatDiscountPercent
         ? parseInt(item.formatDiscountPercent.replace(/[^0-9]/g, '')) || 0
         : Math.round(((originalPrice - discountPrice) / (originalPrice || 1)) * 100);
 
@@ -553,7 +553,7 @@ export class DealFinderService {
         imageUrl,
         originalPrice,
         discountPrice,
-        discountPercent,
+        discountMargin,
         originalUrl,
         canUseCoins,
         maxCoinsRedeem,
@@ -572,166 +572,68 @@ export class DealFinderService {
   }
 
   /**
-   * Upgrade 2: Generate official affiliate link via Adsense Link Convertor.
-   * Launches Puppeteer, navigates to adsense.lazada.vn, uses the Link Convertor tool,
-   * and intercepts the API response to extract the official s.lazada.vn short link.
+   * Generate official affiliate short link via Lazada Adsense API (link-convert-v2.json).
+   * Sends HTTP POST with jumpUrl and Cookie header directly — no browser needed.
+   * Falls back to form-urlencoded if JSON payload is rejected by the API.
    */
   private static async generateAffiliateLinkViaAdsense(productUrl: string, lazadaCookie: string): Promise<string | null> {
-    console.log(`[Adsense Link] Launching browser to convert: ${productUrl}`);
-    let browser;
+    console.log(`[Adsense Link] Directly calling API to convert: ${productUrl}`);
     try {
-      const puppeteerModule = await import('puppeteer');
-      const puppeteer = puppeteerModule.default || puppeteerModule;
-      browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-blink-features=AutomationControlled'],
-      });
-
-      const page = await browser.newPage();
-      await page.setViewport({ width: 1280, height: 1024 });
-
-      // Inject cookies across all Lazada domains
-      const domains = ['.lazada.vn', 'www.lazada.vn', 'm.lazada.vn', 'adsense.lazada.vn'];
-      const parsedCookies: any[] = [];
-      lazadaCookie.split(';').forEach((pair) => {
-        const [name, ...valParts] = pair.trim().split('=');
-        const value = valParts.join('=');
-        if (name && value) {
-          domains.forEach((dom) => {
-            parsedCookies.push({ name: name.trim(), value: value.trim(), domain: dom, path: '/' });
-          });
+      // Try JSON payload first
+      const response = await axios.post(
+        'https://adsense.lazada.vn/newOffer/link-convert-v2.json',
+        { jumpUrl: productUrl },
+        {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Referer': 'https://adsense.lazada.vn/',
+            'Cookie': lazadaCookie,
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000,
         }
-      });
-      for (const c of parsedCookies) {
-        try { await page.setCookie(c); } catch (e) {}
+      );
+
+      const data = response.data;
+      console.log('[Adsense Link] Response:', JSON.stringify(data));
+
+      const shortLink = data?.data?.shortLink || data?.data?.link || data?.shortLink || data?.link;
+      if (shortLink) {
+        return shortLink;
       }
 
-      // Intercept the link conversion API response
-      let convertedLink: string | null = null;
-      page.on('response', async (response) => {
-        const url = response.url();
-        if (url.includes('convertLink') || url.includes('linkConvertor') || url.includes('shorten') || url.includes('getAffiliateLink')) {
-          try {
-            const text = await response.text();
-            const json = JSON.parse(text);
-            // Try common response shapes
-            const link = json?.data?.shortLink || json?.data?.affiliateLink ||
-                         json?.data?.link || json?.data?.url || json?.shortLink ||
-                         json?.link || json?.affiliateLink;
-            if (link && (link.includes('s.lazada.vn') || link.includes('lazada.vn'))) {
-              convertedLink = link;
-              console.log(`[Adsense Link] Intercepted converted link: ${link}`);
-            }
-          } catch (e) {}
+      // If JSON payload was rejected or didn't return a shortLink, try with URLSearchParams form data as fallback
+      console.log('[Adsense Link] Retrying with form-urlencoded payload...');
+      const params = new URLSearchParams();
+      params.append('jumpUrl', productUrl);
+
+      const retryResponse = await axios.post(
+        'https://adsense.lazada.vn/newOffer/link-convert-v2.json',
+        params.toString(),
+        {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Referer': 'https://adsense.lazada.vn/',
+            'Cookie': lazadaCookie,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          timeout: 10000,
         }
-      });
+      );
 
-      // Navigate to the Adsense portal
-      await page.goto('https://adsense.lazada.vn/', { waitUntil: 'networkidle2', timeout: 60000 });
-      await new Promise((r) => setTimeout(r, 3000));
+      const retryData = retryResponse.data;
+      console.log('[Adsense Link] Form-urlencoded Response:', JSON.stringify(retryData));
 
-      // Close any popup modal
-      await page.evaluate(() => {
-        const doc = (globalThis as any).document;
-        const closeBtn = doc.querySelector('a.next-dialog-close, .next-overlay-wrapper .next-dialog-close');
-        if (closeBtn) closeBtn.click();
-      });
-      await new Promise((r) => setTimeout(r, 1000));
-
-      // Click Link Convertor menu item
-      const clicked = await page.evaluate(() => {
-        const doc = (globalThis as any).document;
-        // Try by known class name
-        const el = doc.querySelector('.link_convertor_header_title_box');
-        if (el) { el.click(); return true; }
-        // Fallback: find by text content
-        const allEls = Array.from(doc.querySelectorAll('*') as any[]);
-        const target = allEls.find((e: any) => {
-          const children = Array.from(e.childNodes as any[]);
-          return children.some((n: any) => n.nodeType === 3 && (n.textContent || '').trim() === 'Link Convertor');
-        });
-        if (target) { (target as any).click(); return true; }
-        return false;
-      });
-
-      if (!clicked) {
-        console.warn('[Adsense Link] Could not find Link Convertor menu item.');
-        return null;
-      }
-      await new Promise((r) => setTimeout(r, 2000));
-
-      // Wait for URL input and type the product URL
-      const inputSelector = 'input[placeholder="Paste page url here"], textarea[placeholder*="url"], input[type="text"]';
-      try {
-        await page.waitForSelector(inputSelector, { timeout: 8000 });
-      } catch (e) {
-        console.warn('[Adsense Link] URL input not found within timeout.');
-        return null;
-      }
-      await page.evaluate((sel) => {
-        const doc = (globalThis as any).document;
-        const el = doc.querySelector(sel);
-        if (el) el.value = '';
-      }, inputSelector);
-      await page.type(inputSelector, productUrl, { delay: 30 });
-
-      // Click Confirm Convert button
-      const confirmed = await page.evaluate(() => {
-        const doc = (globalThis as any).document;
-        const btn = doc.querySelector('button.link-convert-confirm');
-        if (btn) { btn.click(); return true; }
-        const buttons = Array.from(doc.querySelectorAll('button') as any[]);
-        const confirmBtn = buttons.find((b: any) => (b.textContent || '').trim() === 'Confirm Convert');
-        if (confirmBtn) { (confirmBtn as any).click(); return true; }
-        return false;
-      });
-
-      if (!confirmed) {
-        console.warn('[Adsense Link] Confirm Convert button not found.');
-        return null;
+      const retryShortLink = retryData?.data?.shortLink || retryData?.data?.link || retryData?.shortLink || retryData?.link;
+      if (retryShortLink) {
+        return retryShortLink;
       }
 
-      // Wait for the API response to be intercepted (up to 8s)
-      await new Promise((r) => setTimeout(r, 8000));
-
-      if (convertedLink) return convertedLink;
-
-      // Fallback: scrape the s.lazada.vn link from the confirmation dialog text/DOM
-      const domLink = await page.evaluate(() => {
-        const doc = (globalThis as any).document;
-
-        // Strategy 1: Check input/textarea values
-        const inputs = Array.from(doc.querySelectorAll('input, textarea') as any[]);
-        for (const inp of inputs as any[]) {
-          const val = (inp as any).value || '';
-          if (val.includes('s.lazada.vn') || (val.includes('lazada.vn') && val.includes('?'))) {
-            return val.trim();
-          }
-        }
-
-        // Strategy 2: Scan all overlay/dialog text for s.lazada.vn URL pattern
-        const lazadaLinkRegex = /https?:\/\/s\.lazada\.vn\/[A-Za-z0-9=&?.\/%_:@!,-]+/;
-        const dialogEls = doc.querySelectorAll('.next-overlay-wrapper, [role="dialog"], .next-dialog');
-        for (const el of Array.from(dialogEls) as any[]) {
-          const text = (el as any).textContent || '';
-          const match = text.match(lazadaLinkRegex);
-          if (match) return match[0].trim();
-        }
-
-        // Strategy 3: Match exact s.lazada.vn short link format (stops before non-URL chars like 'CancelCopy')
-        // Format: https://s.lazada.vn/s.XXXXX?c=X&t=XXXXX
-        const shortLinkMatch = (doc.body?.textContent || '').match(/https:\/\/s\.lazada\.vn\/s\.[A-Za-z0-9]+(?:\?[a-z0-9=&%._-]*)/);
-        if (shortLinkMatch) return shortLinkMatch[0].trim();
-
-        return null;
-      });
-
-      return domLink;
-    } catch (err: any) {
-      console.error('[Adsense Link] Browser error:', err.message);
+      console.warn('[Adsense Link] No shortLink found in API response. Message:', retryData?.message || retryData?.msg || JSON.stringify(retryData));
       return null;
-    } finally {
-      if (browser) await browser.close();
+    } catch (err: any) {
+      console.error('[Adsense Link] Direct API call error:', err.message);
+      return null;
     }
   }
 
@@ -1143,7 +1045,7 @@ export class DealFinderService {
         title: dealPayload.title,
         originalPrice: dealPayload.originalPrice,
         discountPrice: dealPayload.discountPrice,
-        discountPercent: dealPayload.discountPercent,
+        discountMargin: dealPayload.discountMargin,
         platform: dealPayload.platform,
         link: dealPayload.affiliateUrl,
         canUseCoins: dealPayload.canUseCoins,
@@ -1169,7 +1071,7 @@ export class DealFinderService {
             imageUrl: dealPayload.imageUrl,
             originalPrice: dealPayload.originalPrice,
             discountPrice: dealPayload.discountPrice,
-            discountPercent: dealPayload.discountPercent,
+            discountMargin: dealPayload.discountMargin,
             originalUrl: dealPayload.originalUrl,
             affiliateUrl: dealPayload.affiliateUrl,
             aiCaption: aiCaption,
@@ -1193,7 +1095,7 @@ export class DealFinderService {
           imageUrl: dealPayload.imageUrl,
           originalPrice: dealPayload.originalPrice,
           discountPrice: dealPayload.discountPrice,
-          discountPercent: dealPayload.discountPercent,
+          discountMargin: dealPayload.discountMargin,
           originalUrl: dealPayload.originalUrl,
           affiliateUrl: dealPayload.affiliateUrl,
           aiCaption: aiCaption,

@@ -7,7 +7,7 @@ Nhiệm vụ của bạn là viết một bài đăng (caption) cực kỳ hấp
 Thông tin sản phẩm:
 - Tên sản phẩm: {title}
 - Giá gốc: {originalPrice}đ
-- Giá giảm: {discountPrice}đ (-{discountPercent}%)
+- Giá giảm: {discountPrice}đ (-{discountMargin}%)
 - Mã giảm Shop: {shopVoucher}đ
 - Mã giảm Sàn: {platformVoucher}đ
 - Áp xu: {maxCoinsRedeem}đ (Lưu ý: Chỉ áp dụng tối đa khi mua trên App điện thoại)
@@ -38,7 +38,7 @@ export class ConfigService {
           promptTemplate: DEFAULT_PROMPT,
         },
       });
-    } else if (!config.promptTemplate.includes('để tự động áp dụng đầy đủ voucher & xu')) {
+    } else if (!config.promptTemplate?.includes('để tự động áp dụng đầy đủ voucher & xu')) {
       // Force revert/upgrade the prompt template to the new one with app notice
       config = await prisma.systemConfig.update({
         where: { id: 'default' },
@@ -59,12 +59,12 @@ export class ConfigService {
         telegramBotToken: data.telegramBotToken,
         telegramChatId: data.telegramChatId,
         geminiApiKey: data.geminiApiKey,
-        shopeeVietnamAppId: data.shopeeVietnamAppId,
-        shopeeVietnamAppSecret: data.shopeeVietnamAppSecret,
+        shopeeAppKey: data.shopeeAppKey !== undefined ? data.shopeeAppKey : data.shopeeVietnamAppId,
+        shopeeAppSecret: data.shopeeAppSecret !== undefined ? data.shopeeAppSecret : data.shopeeVietnamAppSecret,
         lazadaAppKey: data.lazadaAppKey,
         lazadaAppSecret: data.lazadaAppSecret,
         searchIntervalMinutes: Number(data.searchIntervalMinutes || 60),
-        isScannerActive: data.isScannerActive !== undefined ? Boolean(data.isScannerActive) : true,
+        isScannerActive: data.isScannerActive !== undefined ? Boolean(data.isScannerActive) : false,
         isAutoSendTelegram: data.isAutoSendTelegram !== undefined ? Boolean(data.isAutoSendTelegram) : true,
         shopeeAffiliateId: data.shopeeAffiliateId || '',
         lazadaAffiliateId: data.lazadaAffiliateId || '',
@@ -73,7 +73,7 @@ export class ConfigService {
         lazadaCookie: data.lazadaCookie || '',
         scrapeMethod: data.scrapeMethod || 'api',
         lazadaSearchMethod: data.lazadaSearchMethod || 'catalog',
-        adsenseLinkConvert: data.adsenseLinkConvert !== undefined ? Boolean(data.adsenseLinkConvert) : undefined,
+        adsenseLinkConvert: data.adsenseLinkConvert !== undefined ? Boolean(data.adsenseLinkConvert) : false,
         promptTemplate: data.promptTemplate,
       },
       create: {
@@ -81,12 +81,12 @@ export class ConfigService {
         telegramBotToken: data.telegramBotToken,
         telegramChatId: data.telegramChatId,
         geminiApiKey: data.geminiApiKey,
-        shopeeVietnamAppId: data.shopeeVietnamAppId,
-        shopeeVietnamAppSecret: data.shopeeVietnamAppSecret,
+        shopeeAppKey: data.shopeeAppKey !== undefined ? data.shopeeAppKey : data.shopeeVietnamAppId,
+        shopeeAppSecret: data.shopeeAppSecret !== undefined ? data.shopeeAppSecret : data.shopeeVietnamAppSecret,
         lazadaAppKey: data.lazadaAppKey,
         lazadaAppSecret: data.lazadaAppSecret,
         searchIntervalMinutes: Number(data.searchIntervalMinutes || 60),
-        isScannerActive: data.isScannerActive !== undefined ? Boolean(data.isScannerActive) : true,
+        isScannerActive: data.isScannerActive !== undefined ? Boolean(data.isScannerActive) : false,
         isAutoSendTelegram: data.isAutoSendTelegram !== undefined ? Boolean(data.isAutoSendTelegram) : true,
         shopeeAffiliateId: data.shopeeAffiliateId || '',
         lazadaAffiliateId: data.lazadaAffiliateId || '',

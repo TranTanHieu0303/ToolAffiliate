@@ -5,7 +5,7 @@ export class OrderController {
   static async getOrders(req: Request, res: Response) {
     try {
       const orders = await prisma.order.findMany({
-        orderBy: { purchaseTime: 'desc' },
+        orderBy: { purchaseDate: 'desc' },
       });
       res.json(orders);
     } catch (error: any) {
@@ -31,7 +31,7 @@ export class OrderController {
       });
 
       const recentOrders = await prisma.order.findMany({
-        orderBy: { purchaseTime: 'desc' },
+        orderBy: { purchaseDate: 'desc' },
         take: 5,
       });
 
@@ -40,10 +40,9 @@ export class OrderController {
         take: 5,
       });
 
-      // Get monthly commission chart data for last 6 months
-      // Since SQLite doesn't have advanced date functions, we fetch all orders and group in memory
+      // Group orders by month in-memory for chart data
       const allOrders = await prisma.order.findMany({
-        orderBy: { purchaseTime: 'asc' },
+        orderBy: { purchaseDate: 'asc' },
       });
 
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -58,7 +57,7 @@ export class OrderController {
       }
 
       allOrders.forEach((order: any) => {
-        const date = new Date(order.purchaseTime);
+        const date = new Date(order.purchaseDate);
         const label = `${months[date.getMonth()]} ${date.getFullYear().toString().substring(2)}`;
         if (monthlyDataMap[label]) {
           monthlyDataMap[label].commission += order.commission;
@@ -120,10 +119,10 @@ export class OrderController {
         const productName = mockProducts[Math.floor(Math.random() * mockProducts.length)];
         const orderValue = Math.floor(Math.random() * 1500 + 50) * 1000; // 50k - 1.5M
         const commission = Math.round(orderValue * (Math.random() * 0.08 + 0.02)); // 2% - 10%
-        const status = statuses[Math.floor(Math.random() * 0.85 + 0.15)]; // Higher chance of COMPLETED/PENDING
-        
+        const status = statuses[Math.floor(Math.random() * statuses.length)];
+
         // Random date in the last 6 months
-        const purchaseTime = new Date(
+        const purchaseDate = new Date(
           now.getFullYear(),
           now.getMonth() - Math.floor(Math.random() * 6),
           Math.floor(Math.random() * 28) + 1,
@@ -132,13 +131,13 @@ export class OrderController {
         );
 
         ordersToCreate.push({
-          id: orderId,
+          orderId: orderId,
           platform,
           productName,
           orderValue,
           commission,
           status,
-          purchaseTime,
+          purchaseDate,
         });
       }
 

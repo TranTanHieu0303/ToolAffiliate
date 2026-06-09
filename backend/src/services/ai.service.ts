@@ -6,7 +6,7 @@ export class AIService {
     title: string;
     originalPrice: number;
     discountPrice: number;
-    discountPercent: number;
+    discountMargin: number;
     platform: string;
     link: string;
     canUseCoins?: boolean;
@@ -38,7 +38,7 @@ export class AIService {
         .replace(/{title}/g, product.title)
         .replace(/{originalPrice}/g, product.originalPrice.toLocaleString('vi-VN'))
         .replace(/{discountPrice}/g, product.discountPrice.toLocaleString('vi-VN'))
-        .replace(/{discountPercent}/g, product.discountPercent.toString())
+        .replace(/{discountMargin}/g, product.discountMargin.toString())
         .replace(/{platform}/g, product.platform)
         .replace(/{link}/g, product.link)
         .replace(/{canUseCoins}/g, product.canUseCoins ? 'Có áp xu' : 'Không áp xu')
@@ -75,7 +75,7 @@ export class AIService {
     title: string;
     originalPrice: number;
     discountPrice: number;
-    discountPercent: number;
+    discountMargin: number;
     platform: string;
     link: string;
     canUseCoins?: boolean;
@@ -88,7 +88,7 @@ export class AIService {
     let caption = `🔥 DEAL HOT TRÊN ${product.platform.toUpperCase()} 🔥\n\n` +
       `📦 Sản phẩm: ${product.title}\n` +
       `❌ Giá gốc: ${product.originalPrice.toLocaleString('vi-VN')}đ\n` +
-      `✅ Giá giảm: ${product.discountPrice.toLocaleString('vi-VN')}đ (-${product.discountPercent}%)\n`;
+      `✅ Giá giảm: ${product.discountPrice.toLocaleString('vi-VN')}đ (-${product.discountMargin}%)\n`;
 
     if (product.shopVoucher && product.shopVoucher > 0) {
       caption += `🎟️ Voucher Shop: -${product.shopVoucher.toLocaleString('vi-VN')}đ\n`;
