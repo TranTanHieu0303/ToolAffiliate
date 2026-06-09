@@ -57,7 +57,7 @@ export class OrderController {
         monthlyDataMap[label] = { commission: 0, count: 0 };
       }
 
-      allOrders.forEach((order) => {
+      allOrders.forEach((order: any) => {
         const date = new Date(order.purchaseTime);
         const label = `${months[date.getMonth()]} ${date.getFullYear().toString().substring(2)}`;
         if (monthlyDataMap[label]) {

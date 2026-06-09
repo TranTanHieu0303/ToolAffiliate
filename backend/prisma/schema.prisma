@@ -1,5 +1,5 @@
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -8,67 +8,59 @@ generator client {
 }
 
 model SystemConfig {
-  id                 String   @id @default("default")
-  telegramBotToken   String?
-  telegramChatId     String?
-  geminiApiKey       String?
-  shopeeVietnamAppId String?
-  shopeeVietnamAppSecret String?
-  lazadaAppKey       String?
-  lazadaAppSecret    String?
-  searchIntervalMinutes Int @default(60)
-  isScannerActive    Boolean @default(true)
-  isAutoSendTelegram Boolean @default(true)
-  shopeeAffiliateId  String?
-  lazadaAffiliateId   String?
-  accessTradeId       String?
-  shopeeCookie       String?
-  lazadaCookie        String?
-  scrapeMethod        String   @default("api") // "api" | "browser"
-  lazadaSearchMethod  String   @default("catalog") // "catalog" | "adsense" | "hybrid"
-  adsenseLinkConvert  Boolean  @default(false)  // Convert Lazada links via Adsense portal
-  promptTemplate     String
-  updatedAt          DateTime @updatedAt
+  id                    String   @id @default("default")
+  telegramBotToken      String?
+  telegramChatId        String?
+  geminiApiKey          String?
+  shopeeAppKey          String?
+  shopeeAppSecret       String?
+  lazadaAppKey          String?
+  lazadaAppSecret       String?
+  searchIntervalMinutes Int      @default(60)
+  isScannerActive       Boolean  @default(false)
+  scrapeMethod          String   @default("api") // "api" | "browser"
+  shopeeCookie          String?  @db.Text
+  lazadaCookie          String?  @db.Text
+  promptTemplate        String?  @db.Text
+  updatedAt             DateTime @updatedAt
 }
 
 model SearchKeyword {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid())
   keyword   String   @unique
   maxPrice  Float?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Deal {
-  id              String    @id @default(uuid())
-  platform        String    // "SHOPEE" | "LAZADA"
-  productId       String
-  title           String
-  imageUrl        String?
-  originalPrice   Float
-  discountPrice   Float
-  discountPercent Float
-  originalUrl     String
-  affiliateUrl    String
-  rawInfo         String?
-  aiCaption       String?
-  status          String    @default("PENDING") // PENDING, SENT, FAILED
-  canUseCoins     Boolean   @default(false)
-  maxCoinsRedeem  Int       @default(0)
-  shopVoucher     Float     @default(0)
-  platformVoucher Float     @default(0)
-  priceAfterCoins Float?
-  createdAt       DateTime  @default(now())
-  sentAt          DateTime?
+  id             String   @id @default(uuid())
+  platform       String   // "SHOPEE" | "LAZADA"
+  productId      String
+  title          String
+  imageUrl       String?
+  originalPrice  Float
+  discountPrice  Float
+  discountMargin Float?   // Phần trăm giảm giá
+  voucherCode    String?
+  originalUrl    String   @db.Text
+  affiliateUrl   String?  @db.Text
+  aiCaption      String?  @db.Text
+  status         String   @default("PENDING") // "PENDING" | "SENT" | "FAILED"
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([platform, productId])
 }
 
 model Order {
-  id           String   @id
-  platform     String   // "SHOPEE" | "LAZADA"
-  purchaseTime DateTime
-  orderValue   Float
-  commission   Float
-  status       String   // "PENDING" | "COMPLETED" | "CANCELLED"
-  productName  String
-  createdAt    DateTime @default(now())
+  id             String   @id @default(uuid())
+  platform       String   // "SHOPEE" | "LAZADA"
+  orderId        String   @unique
+  orderValue     Float
+  commission     Float
+  status         String   @default("PENDING") // "PENDING" | "COMPLETED" | "CANCELLED"
+  purchaseDate   DateTime
+  createdAt      DateTime @default(now())
 }
