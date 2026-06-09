@@ -19,6 +19,8 @@ interface Config {
   shopeeCookie: string;
   lazadaCookie: string;
   scrapeMethod: string;
+  lazadaSearchMethod: string;
+  adsenseLinkConvert: boolean;
   promptTemplate: string;
 }
 
@@ -51,6 +53,8 @@ export const Configs: React.FC<ConfigsProps> = ({ showNotification }) => {
     shopeeCookie: '',
     lazadaCookie: '',
     scrapeMethod: 'api',
+    lazadaSearchMethod: 'catalog',
+    adsenseLinkConvert: false,
     promptTemplate: '',
   });
 
@@ -243,6 +247,42 @@ export const Configs: React.FC<ConfigsProps> = ({ showNotification }) => {
                 <option value="api">API Scraper (Nhanh, nhẹ, ước lượng voucher)</option>
                 <option value="browser">Browser Puppeteer (Chính xác, giả lập trình duyệt)</option>
               </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Phương thức tìm sản phẩm Lazada (Lazada Search Method)</label>
+              <select
+                className="form-input"
+                value={config.lazadaSearchMethod || 'catalog'}
+                onChange={(e) => setConfig({ ...config, lazadaSearchMethod: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '0.65rem 0.8rem',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border)',
+                  backgroundColor: 'var(--bg-input, #fff)',
+                  color: 'var(--text)',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="catalog">Lazada Catalog API (Tìm kiếm sản phẩm từ trang chính Lazada)</option>
+                <option value="adsense">Lazada Adsense API (Tìm kiếm từ danh sách chiến dịch Adsense)</option>
+                <option value="hybrid">Lazada Hybrid (Tìm trên Lazada chính ➡️ Bọc qua Adsense Link Converter)</option>
+              </select>
+            </div>
+
+            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '1rem 0' }}>
+              <input
+                type="checkbox"
+                id="adsenseLinkConvert"
+                checked={config.adsenseLinkConvert || false}
+                onChange={(e) => setConfig({ ...config, adsenseLinkConvert: e.target.checked })}
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+              />
+              <label htmlFor="adsenseLinkConvert" className="form-label" style={{ marginBottom: 0, cursor: 'pointer', fontSize: '0.95rem' }}>
+                Chuyển đổi mọi link Lazada qua Adsense Link Converter (Dùng Puppeteer)
+              </label>
             </div>
 
             <div className="form-group">

@@ -199,116 +199,120 @@ export class DealFinderService {
       console.warn('Failed to fetch from real Shopee API. Error:', error.message);
     }
 
+    const lazadaSearchMethod = config.lazadaSearchMethod || 'catalog';
+    const searchCatalog = lazadaSearchMethod === 'catalog' || lazadaSearchMethod === 'hybrid';
+    const searchAdsense = lazadaSearchMethod === 'adsense';
+
     // 2. Try Lazada Real Scraper
-    try {
-      const headers: any = {
-        'User-Agent':
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        Referer: 'https://www.lazada.vn/',
-      };
-      if (config.lazadaCookie) {
-        headers['Cookie'] = config.lazadaCookie;
+    if (searchCatalog) {
+      try {
+        const headers: any = {
+          'User-Agent':
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          Referer: 'https://www.lazada.vn/',
+        };
+        if (config.lazadaCookie) {
+          headers['Cookie'] = config.lazadaCookie;
+        }
+
+        const lazadaRes = await axios.get(
+          `https://www.lazada.vn/catalog/?ajax=true&q=${encodeURIComponent(keyword)}`,
+          {
+            headers,
+            timeout: 5000,
+          }
+        );
+
+        const listItems = lazadaRes.data?.mods?.listItems || [];
+        for (const item of listItems.slice(0, 3)) {
+          const productId = String(item.itemId || item.nid || item.id || '');
+          if (!productId || productId === 'undefined') continue;
+
+          console.log(`[Lazada Scrape Raw Item] Product ID: ${productId}`);
+          console.log(JSON.stringify({
+            name: item.name,
+            price: item.price,
+            originalPrice: item.originalPrice,
+            discount: item.discount,
+            voucherInfo: item.voucherInfo,
+            coinsInfo: item.coinsInfo,
+            coinsOffset: item.coinsOffset,
+            itemUrl: item.itemUrl,
+            productUrl: item.productUrl
+          }, null, 2));
+
+          const originalPrice = parseFloat(item.originalPrice) || parseFloat(item.price) || 0;
+          const discountPrice = parseFloat(item.price) || 0;
+          const discountPercent = item.discount
+            ? parseInt(item.discount.replace(/[^0-9]/g, ''))
+            : Math.round(((originalPrice - discountPrice) / (originalPrice || 1)) * 100) || 0;
+
+          const title = item.name;
+          const imageUrl = item.image ? (item.image.startsWith('http') ? item.image : `https:${item.image}`) : 'https://placehold.co/600x400?text=No+Image';
+
+          let originalUrl = item.productUrl || item.itemUrl || item.itemURL || item.pdpLink || item.url || '';
+          if (originalUrl.startsWith('//')) {
+            originalUrl = `https:${originalUrl}`;
+          } else if (originalUrl && !originalUrl.startsWith('http')) {
+            originalUrl = `https://www.lazada.vn${originalUrl.startsWith('/') ? '' : '/'}${originalUrl}`;
+          } else if (!originalUrl && productId) {
+            originalUrl = `https://www.lazada.vn/products/i${productId}.html`;
+          }
+
+          if (item.skuId) {
+            originalUrl += `${originalUrl.includes('?') ? '&' : '?'}skuId=${item.skuId}`;
+          }
+
+          // Lazada Shop Voucher calculation
+          let shopVoucher = 0;
+          if (item.voucherInfo?.discountAmount) {
+            shopVoucher = parseFloat(item.voucherInfo.discountAmount) || 0;
+          } else {
+            shopVoucher = Math.round(Math.min(discountPrice * 0.05, 50000));
+          }
+
+          // Lazada Platform Voucher calculation
+          const platformVoucher = Math.round(Math.min(discountPrice * 0.10, 100000));
+
+          // Lazada Coins calculation
+          const canUseCoins = !!(item.coinsInfo || item.coinsOffset || Math.random() > 0.4);
+          const maxCoinsRedeem = canUseCoins
+            ? Math.round(Math.min(discountPrice * 0.05, 50000))
+            : 0;
+
+          const priceAfterCoins = Math.max(0, discountPrice - shopVoucher - platformVoucher - maxCoinsRedeem);
+
+          deals.push({
+            platform: 'LAZADA',
+            productId,
+            title,
+            imageUrl,
+            originalPrice,
+            discountPrice,
+            discountPercent,
+            originalUrl,
+            canUseCoins,
+            maxCoinsRedeem,
+            shopVoucher,
+            platformVoucher,
+            priceAfterCoins,
+          });
+        }
+      } catch (lazError: any) {
+        console.warn('Failed to fetch from real Lazada API. Error:', lazError.message);
       }
-
-      const lazadaRes = await axios.get(
-        `https://www.lazada.vn/catalog/?ajax=true&q=${encodeURIComponent(keyword)}`,
-        {
-          headers,
-          timeout: 5000,
-        }
-      );
-
-      const listItems = lazadaRes.data?.mods?.listItems || [];
-      for (const item of listItems.slice(0, 3)) {
-        const productId = String(item.itemId || item.nid || item.id || '');
-        if (!productId || productId === 'undefined') continue;
-
-        console.log(`[Lazada Scrape Raw Item] Product ID: ${productId}`);
-        console.log(JSON.stringify({
-          name: item.name,
-          price: item.price,
-          originalPrice: item.originalPrice,
-          discount: item.discount,
-          voucherInfo: item.voucherInfo,
-          coinsInfo: item.coinsInfo,
-          coinsOffset: item.coinsOffset,
-          itemUrl: item.itemUrl,
-          productUrl: item.productUrl
-        }, null, 2));
-
-        const originalPrice = parseFloat(item.originalPrice) || parseFloat(item.price) || 0;
-        const discountPrice = parseFloat(item.price) || 0;
-        const discountPercent = item.discount
-          ? parseInt(item.discount.replace(/[^0-9]/g, ''))
-          : Math.round(((originalPrice - discountPrice) / (originalPrice || 1)) * 100) || 0;
-
-        const title = item.name;
-        const imageUrl = item.image ? (item.image.startsWith('http') ? item.image : `https:${item.image}`) : 'https://placehold.co/600x400?text=No+Image';
-
-        let originalUrl = item.productUrl || item.itemUrl || item.itemURL || item.pdpLink || item.url || '';
-        if (originalUrl.startsWith('//')) {
-          originalUrl = `https:${originalUrl}`;
-        } else if (originalUrl && !originalUrl.startsWith('http')) {
-          originalUrl = `https://www.lazada.vn${originalUrl.startsWith('/') ? '' : '/'}${originalUrl}`;
-        } else if (!originalUrl && productId) {
-          originalUrl = `https://www.lazada.vn/products/i${productId}.html`;
-        }
-
-        if (item.skuId) {
-          originalUrl += `${originalUrl.includes('?') ? '&' : '?'}skuId=${item.skuId}`;
-        }
-
-        // Lazada Shop Voucher calculation
-        let shopVoucher = 0;
-        if (item.voucherInfo?.discountAmount) {
-          shopVoucher = parseFloat(item.voucherInfo.discountAmount) || 0;
-        } else {
-          shopVoucher = Math.round(Math.min(discountPrice * 0.05, 50000));
-        }
-
-        // Lazada Platform Voucher calculation
-        const platformVoucher = Math.round(Math.min(discountPrice * 0.10, 100000));
-
-        // Lazada Coins calculation
-        const canUseCoins = !!(item.coinsInfo || item.coinsOffset || Math.random() > 0.4);
-        const maxCoinsRedeem = canUseCoins
-          ? Math.round(Math.min(discountPrice * 0.05, 50000))
-          : 0;
-
-        const priceAfterCoins = Math.max(0, discountPrice - shopVoucher - platformVoucher - maxCoinsRedeem);
-
-        deals.push({
-          platform: 'LAZADA',
-          productId,
-          title,
-          imageUrl,
-          originalPrice,
-          discountPrice,
-          discountPercent,
-          originalUrl,
-          canUseCoins,
-          maxCoinsRedeem,
-          shopVoucher,
-          platformVoucher,
-          priceAfterCoins,
-        });
-      }
-    } catch (lazError: any) {
-      console.warn('Failed to fetch from real Lazada API. Error:', lazError.message);
     }
 
     // 2b. Try Lazada Adsense API (searchSkuOffer) - higher quality, commission-enriched data
     // Requires valid lazadaCookie. Results replace Lazada catalog data.
-    let adsenseDealsCount = 0;
-    if (config.lazadaCookie && config.lazadaCookie.length > 20) {
+    if (searchAdsense && config.lazadaCookie && config.lazadaCookie.length > 20) {
       try {
         const adsenseDeals = await this.fetchAdsenseOffers(config, keyword);
         if (adsenseDeals.length > 0) {
-          // Replace Lazada catalog results with Adsense results (more accurate pricing + commission data)
+          // Replace Lazada catalog results with Adsense results
           const nonLazadaDeals = deals.filter((d: any) => d.platform !== 'LAZADA');
           deals.length = 0;
           deals.push(...nonLazadaDeals, ...adsenseDeals);
-          adsenseDealsCount = adsenseDeals.length;
           console.log(`[Adsense] Replaced Lazada catalog deals with ${adsenseDeals.length} Adsense offers.`);
         }
       } catch (adsErr: any) {
@@ -427,7 +431,9 @@ export class DealFinderService {
     config: any
   ): Promise<string> {
     // --- Upgrade 2: Adsense Link Convertor (official s.lazada.vn short link) ---
-    if (platform === 'LAZADA' && config.adsenseLinkConvert && config.lazadaCookie) {
+    const lazadaSearchMethod = config.lazadaSearchMethod || 'catalog';
+    const forceAdsenseConvert = lazadaSearchMethod === 'hybrid' || config.adsenseLinkConvert;
+    if (platform === 'LAZADA' && forceAdsenseConvert && config.lazadaCookie) {
       try {
         const adsenseLink = await this.generateAffiliateLinkViaAdsense(originalUrl, config.lazadaCookie);
         if (adsenseLink) {

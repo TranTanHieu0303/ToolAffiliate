@@ -25,6 +25,7 @@ model SystemConfig {
   shopeeCookie       String?
   lazadaCookie        String?
   scrapeMethod        String   @default("api") // "api" | "browser"
+  lazadaSearchMethod  String   @default("catalog") // "catalog" | "adsense" | "hybrid"
   adsenseLinkConvert  Boolean  @default(false)  // Convert Lazada links via Adsense portal
   promptTemplate     String
   updatedAt          DateTime @updatedAt
