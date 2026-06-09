@@ -1,0 +1,15 @@
+{
+  "name": "tool-affiliate-root",
+  "version": "1.0.0",
+  "description": "Root workspace manager for ToolAffiliate deal finder and sender",
+  "private": true,
+  "scripts": {
+    "postinstall": "npm install --prefix backend --ignore-scripts && npm install --prefix frontend --ignore-scripts",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\""
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
