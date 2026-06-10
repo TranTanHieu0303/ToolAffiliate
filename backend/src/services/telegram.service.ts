@@ -28,7 +28,7 @@ export class TelegramService {
         await axios.post(url, {
           chat_id: chatId,
           text: caption,
-          parse_mode: 'Markdown',
+          parse_mode: 'MarkdownV2',
         });
       }
       return true;

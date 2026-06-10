@@ -164,20 +164,16 @@ export class DealFinderService {
         let shopVoucher = 0;
         if (item.voucher_info?.discount_value) {
           shopVoucher = item.voucher_info.discount_value / 100000;
-        } else {
-          shopVoucher = Math.round(Math.min(discountPrice * 0.05, 50000));
         }
 
         // Shopee Platform Voucher calculation
-        const platformVoucher = Math.round(Math.min(discountPrice * 0.10, 100000));
+        const platformVoucher = 0;
 
         // Shopee Coins calculation
-        const canUseCoins = !!(item.coin_info || item.price_with_coin || (item.is_official_class && Math.random() > 0.3));
-        const maxCoinsRedeem = canUseCoins
-          ? Math.round(Math.min(discountPrice * 0.20, 100000))
-          : 0;
+        const canUseCoins = !!(item.coin_info || item.price_with_coin);
+        const maxCoinsRedeem = 0;
 
-        const priceAfterCoins = Math.max(0, discountPrice - shopVoucher - platformVoucher - maxCoinsRedeem);
+        const priceAfterCoins = discountPrice;
 
         deals.push({
           platform: 'SHOPEE',
@@ -267,20 +263,16 @@ export class DealFinderService {
           let shopVoucher = 0;
           if (item.voucherInfo?.discountAmount) {
             shopVoucher = parseFloat(item.voucherInfo.discountAmount) || 0;
-          } else {
-            shopVoucher = Math.round(Math.min(discountPrice * 0.05, 50000));
           }
 
           // Lazada Platform Voucher calculation
-          const platformVoucher = Math.round(Math.min(discountPrice * 0.10, 100000));
+          const platformVoucher = 0;
 
           // Lazada Coins calculation
-          const canUseCoins = !!(item.coinsInfo || item.coinsOffset || Math.random() > 0.4);
-          const maxCoinsRedeem = canUseCoins
-            ? Math.round(Math.min(discountPrice * 0.05, 50000))
-            : 0;
+          const canUseCoins = !!(item.coinsInfo || item.coinsOffset);
+          const maxCoinsRedeem = 0;
 
-          const priceAfterCoins = Math.max(0, discountPrice - shopVoucher - platformVoucher - maxCoinsRedeem);
+          const priceAfterCoins = discountPrice;
 
           deals.push({
             platform: 'LAZADA',
@@ -368,8 +360,8 @@ export class DealFinderService {
             console.log(`[Browser Scrape] Updated to cheapest variant (skuId: ${details.skuId})`);
           }
 
-          // Re-calculate priceAfterCoins
-          deal.priceAfterCoins = Math.max(0, deal.discountPrice - deal.shopVoucher - deal.platformVoucher - deal.maxCoinsRedeem);
+          // Re-calculate priceAfterCoins to match discountPrice exactly
+          deal.priceAfterCoins = deal.discountPrice;
         }
       }
     }
@@ -395,13 +387,11 @@ export class DealFinderService {
       const discountPercent = Math.floor(Math.random() * 40 + 15); // 15% - 55%
       const discountPrice = Math.round((originalPrice * (100 - discountPercent)) / 100);
 
-      const shopVoucher = Math.round(Math.min(discountPrice * 0.05, 50000));
-      const platformVoucher = Math.round(Math.min(discountPrice * 0.10, 100000));
-      const canUseCoins = Math.random() > 0.3;
-      const maxCoinsRedeem = canUseCoins
-        ? Math.round(Math.min(discountPrice * (platform === 'SHOPEE' ? 0.20 : 0.05), 100000))
-        : 0;
-      const priceAfterCoins = Math.max(0, discountPrice - shopVoucher - platformVoucher - maxCoinsRedeem);
+      const shopVoucher = 0;
+      const platformVoucher = 0;
+      const canUseCoins = false;
+      const maxCoinsRedeem = 0;
+      const priceAfterCoins = discountPrice;
 
       mockDeals.push({
         platform,
@@ -432,7 +422,7 @@ export class DealFinderService {
   ): Promise<string> {
     // --- Upgrade 2: Adsense Link Convertor (official s.lazada.vn short link) ---
     const lazadaSearchMethod = config.lazadaSearchMethod || 'catalog';
-    const forceAdsenseConvert = lazadaSearchMethod === 'hybrid' || config.adsenseLinkConvert;
+    const forceAdsenseConvert = lazadaSearchMethod === 'hybrid' || lazadaSearchMethod === 'adsense' || config.adsenseLinkConvert;
     if (platform === 'LAZADA' && forceAdsenseConvert && config.lazadaCookie) {
       try {
         const adsenseLink = await this.generateAffiliateLinkViaAdsense(originalUrl, config.lazadaCookie);
@@ -590,6 +580,13 @@ export class DealFinderService {
       const page = await browser.newPage();
       await page.setViewport({ width: 1280, height: 1024 });
 
+      // Navigate to Lazada Adsense first to establish domain context before setting cookies
+      try {
+        await page.goto('https://adsense.lazada.vn/', { waitUntil: 'domcontentloaded', timeout: 30000 });
+      } catch (e) {
+        // Ignore redirect/load errors
+      }
+
       // Inject cookies across all Lazada domains
       const domains = ['.lazada.vn', 'www.lazada.vn', 'm.lazada.vn', 'adsense.lazada.vn'];
       const parsedCookies: any[] = [];
@@ -626,8 +623,8 @@ export class DealFinderService {
         }
       });
 
-      // Navigate to the Adsense portal
-      await page.goto('https://adsense.lazada.vn/', { waitUntil: 'networkidle2', timeout: 60000 });
+      // Navigate to the Adsense portal link convertor directly
+      await page.goto('https://adsense.lazada.vn/workspace/linkConvertor', { waitUntil: 'networkidle2', timeout: 60000 });
       await new Promise((r) => setTimeout(r, 3000));
 
       // Close any popup modal
@@ -638,32 +635,40 @@ export class DealFinderService {
       });
       await new Promise((r) => setTimeout(r, 1000));
 
-      // Click Link Convertor menu item
-      const clicked = await page.evaluate(() => {
-        const doc = (globalThis as any).document;
-        // Try by known class name
-        const el = doc.querySelector('.link_convertor_header_title_box');
-        if (el) { el.click(); return true; }
-        // Fallback: find by text content
-        const allEls = Array.from(doc.querySelectorAll('*') as any[]);
-        const target = allEls.find((e: any) => {
-          const children = Array.from(e.childNodes as any[]);
-          return children.some((n: any) => n.nodeType === 3 && (n.textContent || '').trim() === 'Link Convertor');
-        });
-        if (target) { (target as any).click(); return true; }
-        return false;
-      });
-
-      if (!clicked) {
-        console.warn('[Adsense Link] Could not find Link Convertor menu item.');
+      const currentUrl = page.url();
+      if (currentUrl.includes('member.lazada.vn/user/login') || currentUrl.includes('login')) {
+        console.warn('[Adsense Link] Redirected to login page. Your lazadaCookie is invalid or expired for adsense.lazada.vn! Please get the cookie from adsense.lazada.vn.');
         return null;
       }
-      await new Promise((r) => setTimeout(r, 2000));
+
+      // If not already on workspace convertor, try to click the menu item to navigate there
+      if (!currentUrl.includes('linkConvertor')) {
+        const clicked = await page.evaluate(() => {
+          const doc = (globalThis as any).document;
+          // Try by known class name
+          const el = doc.querySelector('.link_convertor_header_title_box');
+          if (el) { el.click(); return true; }
+          // Fallback: find by text content
+          const allEls = Array.from(doc.querySelectorAll('*') as any[]);
+          const target = allEls.find((e: any) => {
+            const children = Array.from(e.childNodes as any[]);
+            return children.some((n: any) => n.nodeType === 3 && (n.textContent || '').trim() === 'Link Convertor');
+          });
+          if (target) { (target as any).click(); return true; }
+          return false;
+        });
+
+        if (!clicked) {
+          console.warn('[Adsense Link] Could not find Link Convertor menu item.');
+          return null;
+        }
+        await new Promise((r) => setTimeout(r, 2000));
+      }
 
       // Wait for URL input and type the product URL
-      const inputSelector = 'input[placeholder="Paste page url here"], textarea[placeholder*="url"], input[type="text"]';
+      const inputSelector = 'textarea[placeholder*="url" i], input[placeholder*="url" i], textarea[placeholder*="link" i], input[placeholder*="link" i], textarea, input[type="text"]';
       try {
-        await page.waitForSelector(inputSelector, { timeout: 8000 });
+        await page.waitForSelector(inputSelector, { timeout: 10000 });
       } catch (e) {
         console.warn('[Adsense Link] URL input not found within timeout.');
         return null;
@@ -681,7 +686,10 @@ export class DealFinderService {
         const btn = doc.querySelector('button.link-convert-confirm');
         if (btn) { btn.click(); return true; }
         const buttons = Array.from(doc.querySelectorAll('button') as any[]);
-        const confirmBtn = buttons.find((b: any) => (b.textContent || '').trim() === 'Confirm Convert');
+        const confirmBtn = buttons.find((b: any) => {
+          const txt = (b.textContent || '').trim().toLowerCase();
+          return txt.includes('confirm') || txt.includes('convert') || txt.includes('chuyển đổi') || txt.includes('tạo link');
+        });
         if (confirmBtn) { (confirmBtn as any).click(); return true; }
         return false;
       });
@@ -718,9 +726,9 @@ export class DealFinderService {
           if (match) return match[0].trim();
         }
 
-        // Strategy 3: Match exact s.lazada.vn short link format (stops before non-URL chars like 'CancelCopy')
+        // Strategy 3: Match exact s.lazada.vn short link format
         // Format: https://s.lazada.vn/s.XXXXX?c=X&t=XXXXX
-        const shortLinkMatch = (doc.body?.textContent || '').match(/https:\/\/s\.lazada\.vn\/s\.[A-Za-z0-9]+(?:\?[a-z0-9=&%._-]*)/);
+        const shortLinkMatch = (doc.body?.textContent || '').match(/https:\/\/s\.lazada\.vn\/s\.[A-Za-z0-9]+(?:\?[A-Za-z0-9=&%._-]*)/i);
         if (shortLinkMatch) return shortLinkMatch[0].trim();
 
         return null;

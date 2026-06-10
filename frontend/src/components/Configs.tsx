@@ -233,16 +233,6 @@ export const Configs: React.FC<ConfigsProps> = ({ showNotification }) => {
                 className="form-input"
                 value={config.scrapeMethod || 'api'}
                 onChange={(e) => setConfig({ ...config, scrapeMethod: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.65rem 0.8rem',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border)',
-                  backgroundColor: 'var(--bg-input, #fff)',
-                  color: 'var(--text)',
-                  outline: 'none',
-                  cursor: 'pointer'
-                }}
               >
                 <option value="api">API Scraper (Nhanh, nhẹ, ước lượng voucher)</option>
                 <option value="browser">Browser Puppeteer (Chính xác, giả lập trình duyệt)</option>
@@ -255,16 +245,6 @@ export const Configs: React.FC<ConfigsProps> = ({ showNotification }) => {
                 className="form-input"
                 value={config.lazadaSearchMethod || 'catalog'}
                 onChange={(e) => setConfig({ ...config, lazadaSearchMethod: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.65rem 0.8rem',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border)',
-                  backgroundColor: 'var(--bg-input, #fff)',
-                  color: 'var(--text)',
-                  outline: 'none',
-                  cursor: 'pointer'
-                }}
               >
                 <option value="catalog">Lazada Catalog API (Tìm kiếm sản phẩm từ trang chính Lazada)</option>
                 <option value="adsense">Lazada Adsense API (Tìm kiếm từ danh sách chiến dịch Adsense)</option>
@@ -409,7 +389,7 @@ export const Configs: React.FC<ConfigsProps> = ({ showNotification }) => {
               </strong>
               <ol style={{ paddingLeft: '1.25rem', margin: 0 }}>
                 <li style={{ marginBottom: '0.25rem' }}>
-                  Truy cập trang web <a href="https://www.lazada.vn" target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', fontWeight: '600' }}>Lazada.vn</a> (hoặc Shopee) và đăng nhập vào tài khoản của bạn.
+                  Đối với Shopee, truy cập <a href="https://shopee.vn" target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', fontWeight: '600' }}>shopee.vn</a>. Đối với Lazada (đặc biệt khi dùng tính năng bọc link Adsense), bắt buộc truy cập và đăng nhập tại <a href="https://adsense.lazada.vn" target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', fontWeight: '600' }}>adsense.lazada.vn</a>.
                 </li>
                 <li style={{ marginBottom: '0.25rem' }}>
                   Nhấn phím <strong>F12</strong> (hoặc nhấn chuột phải chọn <strong>Kiểm tra/Inspect</strong>) để mở Developer Tools.
