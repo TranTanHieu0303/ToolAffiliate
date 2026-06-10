@@ -25,7 +25,7 @@ interface Config {
 }
 
 interface Keyword {
-  id: number;
+  id: string;
   keyword: string;
   maxPrice: number | null;
   isActive: boolean;
@@ -149,7 +149,7 @@ export const Configs: React.FC<ConfigsProps> = ({ showNotification }) => {
     }
   };
 
-  const toggleKeyword = async (id: number) => {
+  const toggleKeyword = async (id: string) => {
     try {
       const res = await fetch(`${API_BASE}/keywords/${id}/toggle`, { method: 'PUT' });
       if (res.ok) {
@@ -160,7 +160,7 @@ export const Configs: React.FC<ConfigsProps> = ({ showNotification }) => {
     }
   };
 
-  const deleteKeyword = async (id: number) => {
+  const deleteKeyword = async (id: string) => {
     try {
       const res = await fetch(`${API_BASE}/keywords/${id}`, { method: 'DELETE' });
       if (res.ok) {
@@ -230,7 +230,7 @@ export const Configs: React.FC<ConfigsProps> = ({ showNotification }) => {
             <div className="form-group">
               <label className="form-label">Phương Thức Cào & Tính Giá</label>
               <select
-                className="form-input"
+                className="form-select"
                 value={config.scrapeMethod || 'api'}
                 onChange={(e) => setConfig({ ...config, scrapeMethod: e.target.value })}
               >
@@ -242,7 +242,7 @@ export const Configs: React.FC<ConfigsProps> = ({ showNotification }) => {
             <div className="form-group">
               <label className="form-label">Phương thức tìm sản phẩm Lazada (Lazada Search Method)</label>
               <select
-                className="form-input"
+                className="form-select"
                 value={config.lazadaSearchMethod || 'catalog'}
                 onChange={(e) => setConfig({ ...config, lazadaSearchMethod: e.target.value })}
               >
@@ -261,7 +261,7 @@ export const Configs: React.FC<ConfigsProps> = ({ showNotification }) => {
                 style={{ width: '18px', height: '18px', cursor: 'pointer' }}
               />
               <label htmlFor="adsenseLinkConvert" className="form-label" style={{ marginBottom: 0, cursor: 'pointer', fontSize: '0.95rem' }}>
-                Chuyển đổi mọi link Lazada qua Adsense Link Converter (Dùng Puppeteer)
+                Chuyển đổi mọi link Lazada qua Adsense Link Converter (Gọi trực tiếp API, không cần Puppeteer)
               </label>
             </div>
 
@@ -412,7 +412,7 @@ export const Configs: React.FC<ConfigsProps> = ({ showNotification }) => {
                 style={{ minHeight: '220px', fontFamily: 'monospace', fontSize: '0.85rem' }}
               />
               <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem', display: 'block' }}>
-                Hỗ trợ các thẻ thay thế: <strong>{"{title}"}</strong>, <strong>{"{originalPrice}"}</strong>, <strong>{"{discountPrice}"}</strong>, <strong>{"{discountPercent}"}</strong>, <strong>{"{platform}"}</strong>, <strong>{"{link}"}</strong>
+                Hỗ trợ các thẻ thay thế: <strong>{"{title}"}</strong>, <strong>{"{originalPrice}"}</strong>, <strong>{"{discountPrice}"}</strong>, <strong>{"{discountMargin}"}</strong>, <strong>{"{platform}"}</strong>, <strong>{"{link}"}</strong>, <strong>{"{shopVoucher}"}</strong>, <strong>{"{platformVoucher}"}</strong>, <strong>{"{maxCoinsRedeem}"}</strong>, <strong>{"{priceAfterCoins}"}</strong>
               </span>
             </div>
 

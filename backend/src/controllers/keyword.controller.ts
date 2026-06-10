@@ -48,7 +48,7 @@ export class KeywordController {
     const { id } = req.params;
     try {
       const existing = await prisma.searchKeyword.findUnique({
-        where: { id: Number(id) },
+        where: { id },
       });
 
       if (!existing) {
@@ -56,7 +56,7 @@ export class KeywordController {
       }
 
       const updated = await prisma.searchKeyword.update({
-        where: { id: Number(id) },
+        where: { id },
         data: { isActive: !existing.isActive },
       });
 
@@ -70,7 +70,7 @@ export class KeywordController {
     const { id } = req.params;
     try {
       await prisma.searchKeyword.delete({
-        where: { id: Number(id) },
+        where: { id },
       });
       res.json({ message: 'Đã xóa từ khóa thành công!' });
     } catch (error: any) {

@@ -75,9 +75,9 @@ export class DealController {
         title: deal.title,
         originalPrice: deal.originalPrice,
         discountPrice: deal.discountPrice,
-        discountPercent: deal.discountPercent,
+        discountMargin: deal.discountMargin || 0,
         platform: deal.platform,
-        link: deal.affiliateUrl,
+        link: deal.affiliateUrl || deal.originalUrl,
       });
 
       const updated = await prisma.deal.update({
