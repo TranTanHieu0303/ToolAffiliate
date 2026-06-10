@@ -379,6 +379,22 @@ textarea.form-input {
   resize: vertical;
 }
 
+select.form-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right 1rem center;
+  background-repeat: no-repeat;
+  background-size: 1.25rem;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+select.form-input option {
+  background-color: #111622;
+  color: #f3f4f6;
+  padding: 0.5rem;
+}
+
 /* Custom mini grid charts for simplicity & premium vibe */
 .mini-chart {
   height: 200px;
