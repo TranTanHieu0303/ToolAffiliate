@@ -219,6 +219,8 @@ export class DealFinderService {
           }
         );
 
+        this.logLazadaData('catalog', keyword, lazadaRes.data);
+
         const listItems = lazadaRes.data?.mods?.listItems || [];
         for (const item of listItems.slice(0, 3)) {
           const productId = String(item.itemId || item.nid || item.id || '');
@@ -484,6 +486,8 @@ export class DealFinderService {
       },
       timeout: 10000,
     });
+
+    this.logLazadaData('adsense', keyword || '', response.data);
 
     const items: any[] = response.data?.data?.reportItem || [];
     if (items.length === 0) {
@@ -997,6 +1001,9 @@ export class DealFinderService {
       }, platform);
 
       console.log(`[Browser Scrape] Successfully parsed ${platform} PDP:`, JSON.stringify(extracted));
+      if (platform === 'LAZADA' && extracted) {
+        this.logLazadaData('browser', url, extracted);
+      }
       return extracted;
     } catch (err: any) {
       console.error(`[Browser Scrape] Error scraping ${url}:`, err.message);
@@ -1113,5 +1120,26 @@ export class DealFinderService {
       results.push(savedDeal);
     }
     return results;
+  }
+
+  private static logLazadaData(source: string, keyword: string, data: any) {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const logsDir = path.join(__dirname, '../../logs');
+      if (!fs.existsSync(logsDir)) {
+        fs.mkdirSync(logsDir, { recursive: true });
+      }
+      const logFile = path.join(logsDir, 'lazada_scrape.log');
+      const logEntry = {
+        timestamp: new Date().toISOString(),
+        source,
+        keyword,
+        data
+      };
+      fs.appendFileSync(logFile, JSON.stringify(logEntry, null, 2) + '\n---\n', 'utf8');
+    } catch (err: any) {
+      console.error('[Logger] Failed to write Lazada scrape log:', err.message);
+    }
   }
 }
