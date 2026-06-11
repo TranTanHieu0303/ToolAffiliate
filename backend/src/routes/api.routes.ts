@@ -20,7 +20,10 @@ router.delete('/keywords/:id', KeywordController.deleteKeyword);
 router.get('/deals', DealController.getDeals);
 router.post('/deals/trigger-scan', DealController.triggerScan);
 router.post('/deals/manual-search', DealController.manualSearch);
+router.post('/deals/parse-link', DealController.parseLink);
+router.post('/deals/create-manual', DealController.createManualDeal);
 router.post('/deals/:id/send', DealController.sendToTelegram);
+router.post('/deals/:id/send-facebook', DealController.sendToFacebook);
 router.post('/deals/:id/regenerate', DealController.regenerateCaption);
 router.put('/deals/:id/caption', DealController.updateCaption);
 

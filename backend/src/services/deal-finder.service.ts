@@ -417,7 +417,7 @@ export class DealFinderService {
     return mockDeals;
   }
 
-  private static async generateAffiliateLink(
+  public static async generateAffiliateLink(
     originalUrl: string,
     platform: string,
     config: any
@@ -632,7 +632,7 @@ export class DealFinderService {
   }
 
 
-  private static async fetchProductDetailsViaBrowser(
+  public static async fetchProductDetailsViaBrowser(
     url: string,
     platform: 'LAZADA' | 'SHOPEE',
     cookie?: string
@@ -649,7 +649,7 @@ export class DealFinderService {
     console.log(`[Browser Scrape] Launching browser for ${platform} product details...`);
     let browser;
     try {
-      const puppeteerModule = await import('puppeteer');
+      const puppeteerModule = await (Function('return import("puppeteer")')() as Promise<any>);
       const puppeteer = puppeteerModule.default || puppeteerModule;
       browser = await puppeteer.launch({
         headless: true,

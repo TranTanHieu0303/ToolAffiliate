@@ -3,6 +3,7 @@ import { Dashboard } from './components/Dashboard';
 import { Deals } from './components/Deals';
 import { Orders } from './components/Orders';
 import { Configs } from './components/Configs';
+import { ManualShare } from './components/ManualShare';
 
 interface Notification {
   message: string;
@@ -56,6 +57,13 @@ const App: React.FC = () => {
             <span>Nhật ký Deals</span>
           </li>
           <li 
+            className={`nav-item ${activeTab === 'manual-share' ? 'active' : ''}`}
+            onClick={() => setActiveTab('manual-share')}
+          >
+            <span className="nav-icon">🔗</span>
+            <span>Chia sẻ thủ công</span>
+          </li>
+          <li 
             className={`nav-item ${activeTab === 'orders' ? 'active' : ''}`}
             onClick={() => setActiveTab('orders')}
           >
@@ -83,6 +91,9 @@ const App: React.FC = () => {
         )}
         {activeTab === 'deals' && (
           <Deals showNotification={showNotification} />
+        )}
+        {activeTab === 'manual-share' && (
+          <ManualShare showNotification={showNotification} />
         )}
         {activeTab === 'orders' && (
           <Orders showNotification={showNotification} />
