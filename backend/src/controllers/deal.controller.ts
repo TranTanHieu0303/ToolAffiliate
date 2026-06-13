@@ -116,124 +116,6 @@ export class DealController {
   static async triggerScan(req: Request, res: Response) {
     try {
       // Async trigger to not block HTTP response
-import { Request, Response } from 'express';
-import { prisma } from '../services/prisma.service';
-import { AIService } from '../services/ai.service';
-import { TelegramService } from '../services/telegram.service';
-import { DealFinderService } from '../services/deal-finder.service';
-import { ConfigService } from '../services/config.service';
-import { FacebookService } from '../services/facebook.service';
-import axios from 'axios';
-
-export class DealController {
-  static async getDeals(req: Request, res: Response) {
-    const { platform, status, page = 1, limit = 10 } = req.query;
-    const skip = (Number(page) - 1) * Number(limit);
-    const take = Number(limit);
-
-    const where: any = {};
-    if (platform) where.platform = String(platform);
-    if (status) where.status = String(status);
-
-    try {
-      const total = await prisma.deal.count({ where });
-      const deals = await prisma.deal.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take,
-      });
-
-      res.json({
-        total,
-        page: Number(page),
-        limit: Number(limit),
-        totalPages: Math.ceil(total / take),
-        data: deals,
-      });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  static async sendToTelegram(req: Request, res: Response) {
-    const { id } = req.params;
-    try {
-      const deal = await prisma.deal.findUnique({ where: { id } });
-      if (!deal) {
-        return res.status(404).json({ error: 'Không tìm thấy deal' });
-      }
-
-      if (!deal.aiCaption) {
-        return res.status(400).json({ error: 'Deal này chưa có caption' });
-      }
-
-      const sent = await TelegramService.sendMessage(deal.aiCaption, deal.imageUrl || undefined);
-
-      if (sent) {
-        await prisma.deal.update({
-          where: { id },
-          data: { status: 'SENT', sentAt: new Date() },
-        });
-        res.json({ message: 'Đã gửi deal thành công lên Telegram!' });
-      } else {
-        res.status(500).json({ error: 'Không thể gửi lên Telegram. Vui lòng kiểm tra lại cấu hình bot.' });
-      }
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  static async regenerateCaption(req: Request, res: Response) {
-    const { id } = req.params;
-    try {
-      const deal = await prisma.deal.findUnique({ where: { id } });
-      if (!deal) {
-        return res.status(404).json({ error: 'Không tìm thấy deal' });
-      }
-
-      const aiCaption = await AIService.generateCaption({
-        title: deal.title,
-        originalPrice: deal.originalPrice,
-        discountPrice: deal.discountPrice,
-        discountMargin: deal.discountMargin || 0,
-        platform: deal.platform,
-        link: deal.affiliateUrl || deal.originalUrl,
-      });
-
-      const updated = await prisma.deal.update({
-        where: { id },
-        data: { aiCaption },
-      });
-
-      res.json(updated);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  static async updateCaption(req: Request, res: Response) {
-    const { id } = req.params;
-    const { aiCaption } = req.body;
-
-    if (!aiCaption) {
-      return res.status(400).json({ error: 'Nội dung caption không được trống' });
-    }
-
-    try {
-      const updated = await prisma.deal.update({
-        where: { id },
-        data: { aiCaption },
-      });
-      res.json(updated);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  static async triggerScan(req: Request, res: Response) {
-    try {
-      // Async trigger to not block HTTP response
       DealFinderService.searchAndPostDeals()
         .then(() => console.log('Manual deal scan completed.'))
         .catch((err) => console.error('Manual deal scan error:', err));
@@ -279,7 +161,7 @@ export class DealController {
           let currentUrl = resolvedUrl;
           const maxDepth = 8;
           let depth = 0;
-          
+
           while (depth < maxDepth) {
             console.log(`[Parse Link] Redirect Step ${depth}: ${currentUrl}`);
             const response = await axios.get(currentUrl, {
@@ -301,8 +183,8 @@ export class DealController {
               currentUrl = redirectUrl;
               depth++;
             } else {
-              if (response.request?.res?.responseUrl) {
-                currentUrl = response.request.res.responseUrl;
+              if ((response.request as any)?.res?.responseUrl) {
+                currentUrl = (response.request as any).res.responseUrl;
               }
               break;
             }
@@ -365,133 +247,193 @@ export class DealController {
         const response = await axios.get(resolvedUrl, {
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'vi-VN,vi;q=0.9,en;q=0.8',
           },
-          timeout: 6000,
+          timeout: 8000,
           validateStatus: () => true
         });
 
-        const html = response.data || '';
+        const html: string = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
 
-        // 1. Try JSON state parsing based on platform
         if (platform === 'SHOPEE') {
-          const initialStateMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({.+?});/);
-          if (initialStateMatch) {
-            try {
-              const stateObj = JSON.parse(initialStateMatch[1]);
-              const item = stateObj.item || stateObj.productDetail?.product;
-              if (item) {
-                if (item.name) title = item.name;
-                const rawPrice = item.price || item.price_min || 0;
-                const rawOrigPrice = item.price_before_discount || item.price_max || rawPrice;
-                
-                discountPrice = rawPrice / 100000;
-                originalPrice = rawOrigPrice / 100000;
-                
-                if (item.image) {
-                  imageUrl = `https://down-vn.img.susercontent.com/file/${item.image}`;
+          // ---- SHOPEE: Extract from window.__INITIAL_STATE__ ----
+          // Use balanced-brace extraction to safely parse the full JSON blob
+          const startIdx = html.indexOf('window.__INITIAL_STATE__=');
+          if (startIdx !== -1) {
+            const startBrace = html.indexOf('{', startIdx);
+            if (startBrace !== -1) {
+              let depth = 0, end = 0;
+              for (let i = startBrace; i < html.length; i++) {
+                if (html[i] === '{') depth++;
+                else if (html[i] === '}') {
+                  depth--;
+                  if (depth === 0) { end = i + 1; break; }
                 }
               }
-            } catch (e) {
-              console.error('[Parse Link] Error parsing Shopee __INITIAL_STATE__:', e);
-            }
-          }
-        } else if (platform === 'LAZADA') {
-          const pdpMatch = html.match(/window\.__moduleData__\s*=\s*({.+?});/) || 
-                           html.match(/window\.g_pdp_data\s*=\s*({.+?});/) ||
-                           html.match(/var\s+g_pdp_data\s*=\s*({.+?});/);
-          if (pdpMatch) {
-            try {
-              const pdpData = JSON.parse(pdpMatch[1]);
-              const fields = pdpData?.data?.root?.fields || pdpData?.fields;
-              if (fields) {
-                if (fields.product?.fields?.title) title = fields.product.fields.title;
-                
-                let minPrice = Infinity;
-                let origPrice = 0;
-                if (fields.skuInfos) {
-                  for (const id in fields.skuInfos) {
-                    const sku = fields.skuInfos[id];
-                    const priceObj = sku.price || {};
-                    const salePrice = parseFloat(priceObj.salePrice?.value || priceObj.salePrice?.amount) || 0;
-                    if (salePrice > 0 && salePrice < minPrice) {
-                      minPrice = salePrice;
-                      origPrice = parseFloat(priceObj.originalPrice?.value || priceObj.originalPrice?.amount) || salePrice;
+              if (end > startBrace) {
+                try {
+                  const stateObj = JSON.parse(html.substring(startBrace, end));
+                  const item = stateObj.item || stateObj.productDetail?.product;
+                  if (item) {
+                    if (item.name) title = item.name;
+                    const rawPrice = item.price || item.price_min || 0;
+                    const rawOrigPrice = item.price_before_discount || item.price_max || rawPrice;
+                    discountPrice = rawPrice / 100000;
+                    originalPrice = rawOrigPrice / 100000;
+                    if (item.image) {
+                      imageUrl = `https://down-vn.img.susercontent.com/file/${item.image}`;
+                    } else if (item.images && item.images[0]) {
+                      imageUrl = `https://down-vn.img.susercontent.com/file/${item.images[0]}`;
                     }
                   }
-                }
-                if (minPrice !== Infinity) {
-                  discountPrice = minPrice;
-                  originalPrice = origPrice || minPrice;
-                }
-                
-                if (fields.skuGalleries && fields.skuGalleries[0]?.images) {
-                  let img = fields.skuGalleries[0].images[0];
-                  if (img && img.startsWith('//')) {
-                    img = `https:${img}`;
-                  }
-                  imageUrl = img;
+                } catch (e) {
+                  console.warn('[Parse Link] Shopee INITIAL_STATE parse failed:', (e as Error).message);
                 }
               }
-            } catch (e) {
-              console.error('[Parse Link] Error parsing Lazada PDP state:', e);
+            }
+          }
+
+        } else if (platform === 'LAZADA') {
+          // ---- LAZADA: Extract from window.__moduleData__ (SSR data) ----
+          // Lazada renders product metadata (title, images, skuIds) in SSR HTML.
+          // Prices are NOT in SSR — must be fetched separately via Mtop API.
+
+          let lazFields: any = null;
+          let defaultSkuId = '';
+          let itemId = productId;
+
+          // Step 1: Find __moduleData__ using balanced-brace algorithm
+          const moduleDataMarker = '__moduleData__ = ';
+          const markerIdx = html.indexOf(moduleDataMarker);
+          if (markerIdx !== -1) {
+            const startBrace = html.indexOf('{', markerIdx);
+            if (startBrace !== -1) {
+              let depth = 0, end = 0;
+              for (let i = startBrace; i < html.length; i++) {
+                if (html[i] === '{') depth++;
+                else if (html[i] === '}') {
+                  depth--;
+                  if (depth === 0) { end = i + 1; break; }
+                }
+              }
+              if (end > startBrace) {
+                try {
+                  const moduleData = JSON.parse(html.substring(startBrace, end));
+                  lazFields = moduleData?.data?.root?.fields;
+
+                  if (lazFields) {
+                    // Title: at fields.product.title (NOT fields.product.fields.title)
+                    title = lazFields.product?.title || lazFields.product?.name || '';
+                    console.log(`[Parse Link] Lazada SSR title: "${title}"`);
+
+                    // Default SKU and item IDs from primaryKey
+                    defaultSkuId = lazFields.primaryKey?.defaultSkuId || lazFields.primaryKey?.skuId || '';
+                    itemId = lazFields.primaryKey?.itemId || productId;
+
+                    // Images: from skuGalleries keyed by skuId or "0"
+                    const galleries = lazFields.skuGalleries || {};
+                    // Try default SKU first, then key "0", then first available
+                    const gallerySku = galleries[defaultSkuId] || galleries['0'] || Object.values(galleries)[0] as any[];
+                    if (gallerySku && Array.isArray(gallerySku)) {
+                      for (const item of gallerySku) {
+                        if (item.src || item.poster) {
+                          let img: string = item.src || item.poster;
+                          if (img.startsWith('//')) img = `https:${img}`;
+                          imageUrl = img;
+                          break;
+                        }
+                      }
+                    }
+                    // Fallback: get image from skuInfos
+                    if (!imageUrl) {
+                      const skuInfos = lazFields.skuInfos || {};
+                      const firstSku = skuInfos[defaultSkuId] || Object.values(skuInfos)[0] as any;
+                      if (firstSku?.image) {
+                        imageUrl = firstSku.image.startsWith('//') ? `https:${firstSku.image}` : firstSku.image;
+                      }
+                    }
+                  }
+                } catch (e) {
+                  console.warn('[Parse Link] Lazada __moduleData__ parse failed:', (e as Error).message);
+                }
+              }
+            }
+          }
+
+          // Step 2: Lazada prices are loaded client-side via Mtop API (requires auth).
+          // Anonymous scraping cannot retrieve actual prices.
+          // We try LD+JSON first (usually doesn't have price for Lazada), then give up gracefully.
+          if (itemId) {
+            const ldJsonRegex = /<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi;
+            let ldMatch;
+            while ((ldMatch = ldJsonRegex.exec(html)) !== null) {
+              try {
+                const parsed = JSON.parse(ldMatch[1].trim());
+                if (parsed?.['@type'] === 'Product') {
+                  if (parsed.name && !title) title = parsed.name;
+                  if (parsed.image && !imageUrl) {
+                    imageUrl = Array.isArray(parsed.image) ? parsed.image[0] : parsed.image;
+                  }
+                  const offer = parsed.offers;
+                  if (offer) {
+                    const o = Array.isArray(offer) ? offer[0] : offer;
+                    const priceVal = parseFloat(o?.price || o?.lowPrice || '0');
+                    if (priceVal > 0) {
+                      discountPrice = priceVal;
+                      originalPrice = priceVal;
+                    }
+                  }
+                  break;
+                }
+              } catch (e) { }
+            }
+
+            if (!discountPrice) {
+              console.log(`[Parse Link] Lazada price not available via anonymous scraping (loaded client-side). User must enter manually.`);
             }
           }
         }
 
-        // 2. Fallbacks to Open Graph and standard SEO Meta tags if state parsing is incomplete
+        // ---- Common Fallbacks (OG Meta / Title tag) ----
         if (!title) {
-          const titleMatch = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i) || 
-                             html.match(/<title>([^<]+)<\/title>/i);
-          if (titleMatch) {
-            title = titleMatch[1].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
-          }
+          // og:title first, then <title>
+          const ogTitle = html.match(/property=["']og:title["'][^>]+content=["']([^"']+)["']/i)
+            || html.match(/content=["']([^"']+)["'][^>]+property=["']og:title["']/i);
+          const titleTag = html.match(/<title>([^<]+)<\/title>/i);
+          const raw = ogTitle?.[1] || titleTag?.[1] || '';
+          // Strip " | Lazada Việt Nam" suffix from og:title
+          title = raw.replace(/\s*\|\s*Lazada\s+.*$/i, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
         }
 
         if (!imageUrl) {
-          const imgMatch = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i);
-          if (imgMatch) {
-            imageUrl = imgMatch[1];
-          }
+          const imgMatch = html.match(/property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+            || html.match(/content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+          if (imgMatch) imageUrl = imgMatch[1];
         }
 
-        if (!discountPrice) {
-          const priceMatch = html.match(/<meta\s+property=["']product:price:amount["']\s+content=["']([^"']+)["']/i) ||
-                             html.match(/<meta\s+property=["']og:price:amount["']\s+content=["']([^"']+)["']/i) ||
-                             html.match(/<meta\s+name=["']twitter:data1["']\s+value=["']([^"']+)["']/i) ||
-                             html.match(/<meta\s+name=["']twitter:data1["']\s+content=["']([^"']+)["']/i);
-          if (priceMatch) {
-            const rawPrice = priceMatch[1].replace(/[^0-9]/g, '');
-            if (rawPrice) {
-              discountPrice = parseFloat(rawPrice);
-              originalPrice = discountPrice;
-            }
-          }
-        }
-
-        // Try LD-JSON extraction as final fallback
-        if (!discountPrice || !title) {
-          const ldJsonMatches = html.matchAll(/<script\s+type=["']application\/ld\+json["']>([^<]+)<\/script>/gi);
-          for (const match of ldJsonMatches) {
-            try {
-              const parsed = JSON.parse(match[1]);
-              if (parsed && parsed['@type'] === 'Product') {
-                if (parsed.name && !title) title = parsed.name;
-                if (parsed.image && !imageUrl) imageUrl = Array.isArray(parsed.image) ? parsed.image[0] : parsed.image;
-                if (parsed.offers) {
-                  const offer = Array.isArray(parsed.offers) ? parsed.offers[0] : parsed.offers;
-                  if (offer.price) {
-                    const priceVal = parseFloat(offer.price);
-                    if (!discountPrice) discountPrice = priceVal;
-                    if (!originalPrice) originalPrice = priceVal;
-                  }
-                }
-                break;
-              }
-            } catch (e) {}
-          }
-        }
       } catch (scrapeErr: any) {
         console.error('[Parse Link] Anonymous scrape failed, fallback to empty:', scrapeErr.message);
+      }
+
+      // If Lazada (since prices are loaded client-side via Mtop API) or if Shopee static parse failed,
+      // fallback to anonymous browser scraping to let client scripts execute and get the full details.
+      if (platform === 'LAZADA' || !title || !discountPrice) {
+        try {
+          console.log(`[Parse Link] Fallback to anonymous browser scrape for ${platform} to execute client scripts...`);
+          const browserData = await DealFinderService.fetchProductDetailsViaBrowser(resolvedUrl, platform);
+          if (browserData) {
+            if (browserData.title) title = browserData.title;
+            if (browserData.discountPrice) discountPrice = browserData.discountPrice;
+            if (browserData.originalPrice) originalPrice = browserData.originalPrice;
+            if (browserData.shopVoucher) shopVoucher = browserData.shopVoucher;
+            if (browserData.platformVoucher) platformVoucher = browserData.platformVoucher;
+            if (browserData.canUseCoins !== undefined) canUseCoins = browserData.canUseCoins;
+            if (browserData.maxCoinsRedeem) maxCoinsRedeem = browserData.maxCoinsRedeem;
+          }
+        } catch (browserErr: any) {
+          console.warn('[Parse Link] Fallback browser scrape failed:', browserErr.message);
+        }
       }
 
       res.json({
@@ -505,7 +447,8 @@ export class DealController {
         shopVoucher,
         platformVoucher,
         canUseCoins,
-        maxCoinsRedeem
+        maxCoinsRedeem,
+        priceRequired: platform === 'LAZADA' && discountPrice === 0,
       });
     } catch (error: any) {
       res.status(500).json({ error: error.message });

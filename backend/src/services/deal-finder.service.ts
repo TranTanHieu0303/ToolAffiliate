@@ -707,7 +707,7 @@ export class DealFinderService {
       // Wait a moment for page/scripts hydration
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      const extracted = await page.evaluate((plat) => {
+      const extracted = await page.evaluate((plat: 'LAZADA' | 'SHOPEE') => {
         const doc = (globalThis as any).document;
         const win = (globalThis as any).window;
         let title = '';
